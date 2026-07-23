@@ -1,0 +1,36 @@
+services:
+  # One-off / on-demand ETL: reads data/raw/*.csv and writes
+  # data/dashboard_data.json. Runs once at startup (compose waits for
+  # it to finish before starting "web"), and can be re-run any time:
+  #
+  #   docker compose run --rm generator
+  #
+  generator:
+    build:
+      context: .
+      dockerfile: Dockerfile.generator
+    volumes:
+      - ./data:/app/data
+    restart: "no"
+
+  # Static frontend, served by nginx. Bind-mounts the same ./data folder
+  # the generator writes to, so regenerating data never requires
+  # rebuilding or restarting this container.
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "${STOKVEL_PORT:-8080}:80"
+    volumes:
+      - ./data:/usr/share/nginx/html/data:ro
+    depends_on:
+      generator:
+        condition: service_completed_successfully
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost/"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 5s

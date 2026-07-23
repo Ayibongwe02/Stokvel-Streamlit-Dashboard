@@ -1,0 +1,20 @@
+# ════════════════════════════════════════════════════════════════
+# Data generator image — regenerates data/dashboard_data.json from
+# data/raw/*.csv on demand, without needing to rebuild the nginx
+# web image. Used as the "generator" service in docker-compose.yml,
+# which shares a bind-mounted ./data folder with the "web" service.
+#
+# Usage (after updating the CSVs in data/raw/):
+#   docker compose run --rm generator
+# The web container picks up the new dashboard_data.json immediately
+# (it's a bind mount) — no restart needed, the frontend's own
+# 60-second auto-refresh will pick it up, or just reload the page.
+# ════════════════════════════════════════════════════════════════
+FROM python:3.11-slim
+
+WORKDIR /app
+COPY scripts/ ./scripts/
+
+RUN pip install --no-cache-dir "pandas>=2.0,<3"
+
+ENTRYPOINT ["python", "scripts/generate_data.py"]

@@ -1,0 +1,586 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Stokvel Analytics Dashboard</title>
+  <link rel="stylesheet" href="src/css/main.css">
+  <script src="src/js/vendor/chart.umd.js"></script>
+</head>
+<body class="role-user">
+
+<!-- ── Loading overlay ── -->
+<div id="loading-overlay">
+  <div class="spinner"></div>
+  <span class="loading-text">Loading dashboard data…</span>
+</div>
+
+<div class="shell">
+
+  <!-- ════════════════ SIDEBAR ════════════════ -->
+  <aside class="sidebar">
+    <div class="logo-block">
+      <div class="logo-mark">
+        <div class="logo-hex">
+          <svg viewBox="0 0 16 16"><path d="M8 1l6 3.5v7L8 15l-6-3.5v-7z"/></svg>
+        </div>
+        <span class="logo-name">Stokvel</span>
+      </div>
+      <div class="logo-sub">ANALYTICS &amp; FORECASTING</div>
+    </div>
+
+    <!-- Role toggle -->
+    <div class="role-toggle">
+      <button class="role-btn" data-role="user">User View</button>
+      <button class="role-btn" data-role="analyst">Analyst View</button>
+    </div>
+    <div class="role-hint" id="role-hint">Simple balances, forecasts &amp; alerts.</div>
+
+    <nav class="nav">
+      <div class="nav-section">MAIN</div>
+
+      <div class="nav-item active" data-page="overview">
+        <svg viewBox="0 0 16 16" fill="currentColor"><rect x="1" y="1" width="6" height="6" rx="1"/><rect x="9" y="1" width="6" height="6" rx="1"/><rect x="1" y="9" width="6" height="6" rx="1"/><rect x="9" y="9" width="6" height="6" rx="1"/></svg>
+        Overview
+      </div>
+
+      <div class="nav-item" data-page="forecast">
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M1 12l4-5 3 3 4-6 3 3"/></svg>
+        Forecasting Hub
+      </div>
+
+      <div class="nav-item" data-page="members">
+        <svg viewBox="0 0 16 16" fill="currentColor"><circle cx="8" cy="5" r="3"/><path d="M2 14c0-3.3 2.7-6 6-6s6 2.7 6 6"/></svg>
+        Members
+      </div>
+
+      <div class="nav-section">ANALYST TOOLS</div>
+
+      <div class="nav-item analyst-only" data-page="anomaly">
+        <svg viewBox="0 0 16 16" fill="currentColor"><path d="M8 1l7 13H1z"/><rect x="7.25" y="6" width="1.5" height="4" fill="#0a0c10"/><rect x="7.25" y="11" width="1.5" height="1.5" fill="#0a0c10"/></svg>
+        Anomaly Tracker
+        <span class="nav-badge">—</span>
+      </div>
+
+      <div class="nav-item analyst-only" data-page="regional">
+        <svg viewBox="0 0 16 16" fill="currentColor"><path d="M8 1C5.2 1 3 3.2 3 6c0 4 5 9 5 9s5-5 5-9c0-2.8-2.2-5-5-5zm0 6.5a1.5 1.5 0 110-3 1.5 1.5 0 010 3z"/></svg>
+        Regional View
+      </div>
+    </nav>
+
+    <div class="sidebar-footer">
+      <div class="data-pill">● LIVE</div>
+      <div id="footer-fc-count">— forecasting records</div>
+      <div id="footer-tx-count">— transaction records</div>
+      <div class="last-updated" id="last-updated">Checking…</div>
+    </div>
+  </aside>
+
+  <!-- ════════════════ MAIN AREA ════════════════ -->
+  <div class="main-area">
+
+    <!-- Topbar -->
+    <div class="topbar">
+      <div style="display:flex;align-items:center;gap:12px">
+        <button class="mobile-nav-btn" id="mobile-nav-btn" aria-label="Toggle menu">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 4h12M2 8h12M2 12h12"/></svg>
+        </button>
+        <div class="topbar-title" id="topbar-title">Overview</div>
+      </div>
+      <div class="topbar-right">
+        <div class="status-dot"></div>
+        <span class="topbar-meta" id="topbar-meta">loading…</span>
+        <span class="chip chip-user" id="role-chip">User View</span>
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════════════════════════════
+         PAGE: OVERVIEW
+         ══════════════════════════════════════════════════════════ -->
+    <div class="page active" id="page-overview">
+      <div class="page-hdr">
+        <div class="page-hdr-left">
+          <h1>Group Overview</h1>
+          <p class="user-only">A quick look at where your stokvel stands today.</p>
+          <p class="analyst-only">Collective performance across all members · forecasting_dashboard.csv</p>
+        </div>
+      </div>
+
+      <!-- KPIs (both modes) -->
+      <div class="kpi-strip">
+        <div class="kpi g">
+          <div class="kpi-label">TOTAL GROUP BALANCE</div>
+          <div class="kpi-val" id="ov-kpi-balance">—</div>
+          <div class="kpi-sub">latest closing period</div>
+        </div>
+        <div class="kpi a">
+          <div class="kpi-label">TOTAL CONTRIBUTIONS</div>
+          <div class="kpi-val" id="ov-kpi-contrib">—</div>
+          <div class="kpi-sub">all periods combined</div>
+        </div>
+        <div class="kpi r">
+          <div class="kpi-label">TOTAL WITHDRAWALS</div>
+          <div class="kpi-val" id="ov-kpi-withdraw">—</div>
+          <div class="kpi-sub">rate: <span id="ov-kpi-rate">—</span></div>
+        </div>
+        <div class="kpi b">
+          <div class="kpi-label">ANOMALY EVENTS</div>
+          <div class="kpi-val" id="ov-kpi-anomaly">—</div>
+          <div class="kpi-sub"><span id="ov-kpi-clean">—</span> clean periods</div>
+        </div>
+      </div>
+
+      <!-- Simple forecast (both modes, always the headline chart) -->
+      <div class="card card-lg">
+        <div class="card-hdr">
+          <div>
+            <span class="card-title card-title-lg">Where your balance is headed</span>
+            <div class="card-desc" id="ov-forecast-desc">Calculating projection…</div>
+          </div>
+          <span class="chip chip-accent">6-month outlook</span>
+        </div>
+        <div class="chart-wrap" style="height:280px"><canvas id="ov-forecast"></canvas></div>
+      </div>
+
+      <!-- Insights / top anomalies (both modes, plain language) -->
+      <div class="card">
+        <div class="card-hdr">
+          <span class="card-title">Key insights</span>
+          <span class="card-meta">what changed recently</span>
+        </div>
+        <div class="insight-list" id="ov-insights"></div>
+      </div>
+
+      <!-- ── Analyst-only detail ── -->
+      <div class="grid-6-4 analyst-only">
+        <div class="card">
+          <div class="card-hdr"><span class="card-title">Group balance over time</span></div>
+          <div class="chart-wrap" style="height:220px"><canvas id="ov-balance"></canvas></div>
+        </div>
+        <div class="card">
+          <div class="card-hdr">
+            <span class="card-title">Balance by member</span>
+            <span class="card-meta">latest period</span>
+          </div>
+          <div class="chart-wrap" style="height:220px"><canvas id="ov-members"></canvas></div>
+        </div>
+      </div>
+
+      <div class="grid-3 analyst-only">
+        <div class="card">
+          <div class="card-hdr"><span class="card-title">Monthly net flow</span><span class="card-meta">contrib − withdraw</span></div>
+          <div class="chart-wrap" style="height:160px"><canvas id="ov-netflow"></canvas></div>
+        </div>
+        <div class="card">
+          <div class="card-hdr"><span class="card-title">Member categories</span></div>
+          <div class="chart-wrap" style="height:160px"><canvas id="ov-categories"></canvas></div>
+        </div>
+        <div class="card">
+          <div class="card-hdr"><span class="card-title">Anomalies per period</span></div>
+          <div class="chart-wrap" style="height:160px"><canvas id="ov-anomalies"></canvas></div>
+        </div>
+      </div>
+
+      <div class="card analyst-only">
+        <div class="card-hdr">
+          <span class="card-title">Member summary</span>
+          <span class="card-meta">24-month aggregate · forecasting_dashboard.csv</span>
+        </div>
+        <div class="tbl-wrap">
+          <table>
+            <thead><tr>
+              <th>MEMBER</th><th>REGION</th><th>CATEGORY</th>
+              <th>CLOSING BALANCE</th><th>TOTAL CONTRIB</th><th>TOTAL WITHDRAW</th>
+              <th>ANOMALIES</th><th>BEST MODEL</th><th>AVG MAPE</th>
+            </tr></thead>
+            <tbody id="member-summary-tbl"></tbody>
+          </table>
+        </div>
+      </div>
+    </div><!-- /page-overview -->
+
+    <!-- ══════════════════════════════════════════════════════════
+         PAGE: FORECASTING HUB  (central page)
+         ══════════════════════════════════════════════════════════ -->
+    <div class="page" id="page-forecast">
+      <div class="page-hdr">
+        <div class="page-hdr-left">
+          <h1>Forecasting Hub</h1>
+          <p class="user-only">A simple look at where balances are headed next.</p>
+          <p class="analyst-only">Holt-Winters vs ARIMA · historical accuracy · future projections</p>
+        </div>
+        <div class="filter-row">
+          <select class="filter-select" id="fh-scope-select"></select>
+          <div class="model-toggle" id="fh-model-toggle">
+            <button data-model="both" class="active both">Both models</button>
+            <button data-model="hw" class="hw">Holt-Winters</button>
+            <button data-model="arima" class="arima">ARIMA</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Headline projection chart (both modes) -->
+      <div class="card card-lg">
+        <div class="card-hdr">
+          <div>
+            <span class="card-title card-title-lg" id="fh-chart-title">Historical balance + 6-month projection</span>
+            <div class="card-desc" id="fh-chart-desc">—</div>
+          </div>
+          <div class="legend" id="fh-legend">
+            <span class="leg"><span class="leg-dot" style="background:#3ecf8e"></span>Actual</span>
+            <span class="leg"><span class="leg-dot" style="background:#a78bfa"></span>Holt-Winters</span>
+            <span class="leg"><span class="leg-dot" style="background:#5b9cf6"></span>ARIMA</span>
+          </div>
+        </div>
+        <div class="chart-wrap" style="height:300px"><canvas id="fh-projection"></canvas></div>
+      </div>
+
+      <!-- Plain-language summary (User mode headline, Analyst mode too) -->
+      <div class="grid-3" id="fh-projection-kpis">
+        <div class="kpi g">
+          <div class="kpi-label">PROJECTED IN 6 MONTHS</div>
+          <div class="kpi-val" id="fh-kpi-future">—</div>
+          <div class="kpi-sub" id="fh-kpi-future-sub">blended estimate</div>
+        </div>
+        <div class="kpi a">
+          <div class="kpi-label">EXPECTED CHANGE</div>
+          <div class="kpi-val" id="fh-kpi-change">—</div>
+          <div class="kpi-sub">vs current balance</div>
+        </div>
+        <div class="kpi b">
+          <div class="kpi-label">MODEL AGREEMENT</div>
+          <div class="kpi-val" id="fh-kpi-agree">—</div>
+          <div class="kpi-sub">how closely HW &amp; ARIMA align</div>
+        </div>
+      </div>
+
+      <!-- ── Analyst-only: model comparison & diagnostics ── -->
+      <details class="disclosure analyst-only" open>
+        <summary>Model accuracy comparison <span class="chev">▸</span></summary>
+        <div class="disclosure-body">
+          <div class="kpi-strip">
+            <div class="kpi b">
+              <div class="kpi-label">HW MODEL WINS</div>
+              <div class="kpi-val" id="fc-kpi-hwwins">—</div>
+              <div class="kpi-sub">lower avg RMSE</div>
+            </div>
+            <div class="kpi g">
+              <div class="kpi-label">BEST HW RMSE</div>
+              <div class="kpi-val" id="fc-kpi-bestrmse">—</div>
+              <div class="kpi-sub">across all periods</div>
+            </div>
+            <div class="kpi a">
+              <div class="kpi-label">GROUP AVG MAPE</div>
+              <div class="kpi-val" id="fc-kpi-mape">—</div>
+              <div class="kpi-sub">across all members</div>
+            </div>
+            <div class="kpi r">
+              <div class="kpi-label">WORST ARIMA RMSE</div>
+              <div class="kpi-val" id="fc-kpi-worstrmse">—</div>
+              <div class="kpi-sub">across all periods</div>
+            </div>
+          </div>
+
+          <div class="grid-6-4">
+            <div class="card">
+              <div class="card-hdr">
+                <span class="card-title">RMSE — Holt-Winters vs ARIMA</span>
+                <div class="legend">
+                  <span class="leg"><span class="leg-dot" style="background:#a78bfa"></span>Holt-Winters</span>
+                  <span class="leg"><span class="leg-dot" style="background:#5b9cf6"></span>ARIMA</span>
+                </div>
+              </div>
+              <div class="chart-wrap" style="height:220px"><canvas id="fc-rmse"></canvas></div>
+            </div>
+            <div class="card">
+              <div class="card-hdr"><span class="card-title">Best model per member</span></div>
+              <div id="fc-best-models" style="margin-top:4px"></div>
+            </div>
+          </div>
+
+          <div class="grid-2">
+            <div class="card">
+              <div class="card-hdr"><span class="card-title">MAPE over time — all members</span><span class="card-meta">%</span></div>
+              <div class="chart-wrap" style="height:200px"><canvas id="fc-mape"></canvas></div>
+            </div>
+            <div class="card">
+              <div class="card-hdr"><span class="card-title">Average MAE per member</span></div>
+              <div class="chart-wrap" style="height:200px"><canvas id="fc-mae"></canvas></div>
+            </div>
+          </div>
+        </div>
+      </details>
+
+      <details class="disclosure analyst-only">
+        <summary>Per-member forecast table &amp; error breakdown <span class="chev">▸</span></summary>
+        <div class="disclosure-body">
+          <div class="filter-row">
+            <select class="filter-select" id="fc-filter-select"></select>
+          </div>
+          <div class="tbl-wrap">
+            <table>
+              <thead><tr>
+                <th>MEMBER</th><th>DATE</th><th>RMSE HW</th><th>RMSE ARIMA</th>
+                <th>MAE</th><th>MAPE</th><th>BEST MODEL</th>
+                <th>ACTUAL</th><th>FORECAST</th><th>ERROR</th>
+              </tr></thead>
+              <tbody id="fc-table-body"></tbody>
+            </table>
+          </div>
+        </div>
+      </details>
+
+      <details class="disclosure analyst-only">
+        <summary>Model performance summary <span class="chev">▸</span></summary>
+        <div class="disclosure-body">
+          <p class="card-desc" style="margin-bottom:4px">Average error metrics per member, both models, full 24-month history.</p>
+          <div class="tbl-wrap">
+            <table>
+              <thead><tr>
+                <th>MEMBER</th><th>AVG RMSE (HW)</th><th>AVG RMSE (ARIMA)</th>
+                <th>AVG MAE</th><th>AVG MAPE</th><th>BEST MODEL</th><th>MARGIN</th>
+              </tr></thead>
+              <tbody id="fh-summary-tbl"></tbody>
+            </table>
+          </div>
+        </div>
+      </details>
+    </div><!-- /page-forecast -->
+
+    <!-- ══════════════════════════════════════════════════════════
+         PAGE: MEMBERS
+         ══════════════════════════════════════════════════════════ -->
+    <div class="page" id="page-members">
+      <div class="page-hdr">
+        <div class="page-hdr-left">
+          <h1>Members</h1>
+          <p>Balance trajectory, contributions &amp; a personal forecast for each member.</p>
+        </div>
+        <div class="member-tabs" id="member-tabs"></div>
+      </div>
+
+      <div class="member-info-grid" id="member-info-grid"></div>
+
+      <div class="card card-lg">
+        <div class="card-hdr">
+          <span class="card-title card-title-lg" id="member-chart-title">Balance trajectory</span>
+          <div class="legend">
+            <span class="leg"><span class="leg-dot" style="background:#3ecf8e"></span>Actual</span>
+            <span class="leg"><span class="leg-dot" style="background:rgba(91,156,246,0.7)"></span>Forecast</span>
+            <span class="leg"><span class="leg-dot" style="background:#f16b6b;border-radius:50%"></span>Anomaly</span>
+          </div>
+        </div>
+        <div class="chart-wrap" style="height:260px"><canvas id="member-balance-chart"></canvas></div>
+        <p class="card-desc" id="member-forecast-note" style="margin-top:14px"></p>
+      </div>
+
+      <details class="disclosure">
+        <summary>Contributions, withdrawals &amp; anomaly log <span class="chev">▸</span></summary>
+        <div class="disclosure-body">
+          <div class="grid-2">
+            <div class="card">
+              <div class="card-hdr"><span class="card-title">Contributions vs Withdrawals</span></div>
+              <div class="chart-wrap" style="height:200px"><canvas id="member-flow-chart"></canvas></div>
+            </div>
+            <div class="card">
+              <div class="card-hdr">
+                <span class="card-title">Anomaly log</span>
+                <span class="card-meta" id="member-anomaly-count">—</span>
+              </div>
+              <div class="tbl-wrap" style="max-height:200px;overflow-y:auto">
+                <table>
+                  <thead><tr><th>DATE</th><th>TYPE</th><th>BALANCE</th><th>WITHDRAWAL</th></tr></thead>
+                  <tbody id="member-anomaly-tbl"></tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+      </details>
+
+      <details class="disclosure">
+        <summary>2026 transaction history <span class="chev">▸</span><span class="disclosure-hint">stokvel_dataset.csv</span></summary>
+        <div class="disclosure-body">
+          <div class="tbl-wrap" style="max-height:260px;overflow-y:auto">
+            <table>
+              <thead><tr><th>DATE</th><th>FREQUENCY</th><th>CONTRIBUTION</th><th>WITHDRAWAL</th><th>BALANCE</th></tr></thead>
+              <tbody id="member-tx-tbl"></tbody>
+            </table>
+          </div>
+        </div>
+      </details>
+    </div><!-- /page-members -->
+
+    <!-- ══════════════════════════════════════════════════════════
+         PAGE: ANOMALY TRACKER (analyst-focused)
+         ══════════════════════════════════════════════════════════ -->
+    <div class="page" id="page-anomaly">
+      <div class="page-hdr">
+        <div class="page-hdr-left">
+          <h1>Anomaly Tracker</h1>
+          <p>Rule-based detection · Sudden Drop · Spike · all flagged events</p>
+        </div>
+      </div>
+
+      <div class="notice">
+        <span class="notice-icon">ℹ</span>
+        <div>
+          <strong style="color:#bfdbfe">No ML model on anomaly detection.</strong>
+          All flags are deterministic threshold rules inside
+          <code style="background:rgba(255,255,255,0.07);padding:1px 6px;border-radius:3px;font-size:10px">scripts/forecasting.py</code>
+          — Sudden Drop (withdrawal &gt;30% balance drop vs previous period) and Spike (large single withdrawal).
+          Consider adding Isolation Forest or rolling Z-score for statistical detection.
+        </div>
+      </div>
+
+      <div class="kpi-strip">
+        <div class="kpi r">
+          <div class="kpi-label">TOTAL EVENTS</div>
+          <div class="kpi-val" id="an-kpi-total">—</div>
+          <div class="kpi-sub">anomaly rate: <span id="an-kpi-rate">—</span></div>
+        </div>
+        <div class="kpi a">
+          <div class="kpi-label">SUDDEN DROPS</div>
+          <div class="kpi-val" id="an-kpi-sudden">—</div>
+          <div class="kpi-sub">withdrawal &gt; 30% balance drop</div>
+        </div>
+        <div class="kpi b">
+          <div class="kpi-label">SPIKES</div>
+          <div class="kpi-val" id="an-kpi-spike">—</div>
+          <div class="kpi-sub">large single withdrawal</div>
+        </div>
+        <div class="kpi g">
+          <div class="kpi-label">CLEAN PERIODS</div>
+          <div class="kpi-val" id="an-kpi-clean">—</div>
+          <div class="kpi-sub">no anomaly flagged</div>
+        </div>
+      </div>
+
+      <div class="grid-6-4">
+        <div class="card">
+          <div class="card-hdr">
+            <span class="card-title">Anomalies by period</span>
+            <div class="legend">
+              <span class="leg"><span class="leg-dot" style="background:#f16b6b"></span>Sudden Drop</span>
+              <span class="leg"><span class="leg-dot" style="background:#f0a429"></span>Spike</span>
+            </div>
+          </div>
+          <div class="chart-wrap" style="height:200px"><canvas id="an-trend"></canvas></div>
+        </div>
+        <div class="card">
+          <div class="card-hdr"><span class="card-title">Count per member</span></div>
+          <div id="an-member-bars" style="margin-top:6px"></div>
+        </div>
+      </div>
+
+      <div class="grid-7-3">
+        <div class="card">
+          <div class="card-hdr">
+            <span class="card-title">Event log</span>
+            <div class="card-actions">
+              <div id="an-filter-btns" style="display:flex;gap:6px">
+                <button class="mtab active" data-filter="all" style="font-size:9px;padding:3px 9px">All</button>
+                <button class="mtab" data-filter="Sudden Drop" style="font-size:9px;padding:3px 9px">Sudden Drop</button>
+                <button class="mtab" data-filter="Spike" style="font-size:9px;padding:3px 9px">Spike</button>
+              </div>
+              <select class="filter-select" id="an-member-sel"></select>
+            </div>
+          </div>
+          <div class="tbl-wrap" style="max-height:300px;overflow-y:auto">
+            <table>
+              <thead><tr>
+                <th>MEMBER</th><th>DATE</th><th>TYPE</th>
+                <th>BALANCE</th><th>WITHDRAWAL</th><th>CONTRIBUTION</th><th>REGION</th>
+              </tr></thead>
+              <tbody id="an-table-body"></tbody>
+            </table>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-hdr"><span class="card-title">Risk summary</span></div>
+          <div class="risk-list" id="an-risk-list"></div>
+        </div>
+      </div>
+    </div><!-- /page-anomaly -->
+
+    <!-- ══════════════════════════════════════════════════════════
+         PAGE: REGIONAL VIEW (analyst-focused)
+         ══════════════════════════════════════════════════════════ -->
+    <div class="page" id="page-regional">
+      <div class="page-hdr">
+        <div class="page-hdr-left">
+          <h1>Regional View</h1>
+          <p>Cape Town vs Durban · by category · contribution frequency breakdown</p>
+        </div>
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+        <div class="kpi g" id="rg-kpi-0">
+          <div class="kpi-label">REGION 1</div>
+          <div class="kpi-val">—</div>
+          <div class="kpi-sub">—</div>
+        </div>
+        <div class="kpi b" id="rg-kpi-1">
+          <div class="kpi-label">REGION 2</div>
+          <div class="kpi-val">—</div>
+          <div class="kpi-sub">—</div>
+        </div>
+      </div>
+
+      <div style="display:flex;gap:16px" id="rg-kpi-cats"></div>
+
+      <div class="grid-2">
+        <div class="card">
+          <div class="card-hdr"><span class="card-title">Balance by region over time</span></div>
+          <div class="chart-wrap" style="height:220px"><canvas id="rg-balance"></canvas></div>
+        </div>
+        <div class="card">
+          <div class="card-hdr"><span class="card-title">Contributions by region</span></div>
+          <div class="chart-wrap" style="height:220px"><canvas id="rg-contrib"></canvas></div>
+        </div>
+      </div>
+
+      <div class="grid-3">
+        <div class="card">
+          <div class="card-hdr"><span class="card-title">Anomalies by region</span></div>
+          <div class="chart-wrap" style="height:180px"><canvas id="rg-anomaly-region"></canvas></div>
+        </div>
+        <div class="card">
+          <div class="card-hdr"><span class="card-title">Balance by category</span></div>
+          <div class="chart-wrap" style="height:180px"><canvas id="rg-category"></canvas></div>
+        </div>
+        <div class="card">
+          <div class="card-hdr"><span class="card-title">Forecast horizon split</span></div>
+          <div class="chart-wrap" style="height:180px"><canvas id="rg-horizon"></canvas></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-hdr">
+          <span class="card-title">Contribution frequency (2026 data)</span>
+          <span class="card-meta">stokvel_dataset.csv</span>
+        </div>
+        <div class="chart-wrap" style="height:180px"><canvas id="rg-frequency"></canvas></div>
+      </div>
+
+      <div class="card">
+        <div class="card-hdr"><span class="card-title">Regional performance table</span></div>
+        <div class="tbl-wrap">
+          <table>
+            <thead><tr>
+              <th>MEMBER</th><th>REGION</th><th>CATEGORY</th><th>HORIZON</th><th>FREQUENCY</th>
+              <th>CLOSING BAL</th><th>AVG CONTRIB</th><th>AVG WITHDRAW</th>
+              <th>ANOMALIES</th><th>AVG RMSE HW</th><th>AVG RMSE AR</th>
+            </tr></thead>
+            <tbody id="rg-table-body"></tbody>
+          </table>
+        </div>
+      </div>
+    </div><!-- /page-regional -->
+
+  </div><!-- /main-area -->
+</div><!-- /shell -->
+
+<script type="module" src="src/js/app.js"></script>
+</body>
+</html>
