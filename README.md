@@ -194,6 +194,34 @@ anomaly detection.
 - **Data pipeline:** Python + Pandas
 - **Charts:** Chart.js (line, bar, doughnut, scatter overlay)
 
+## GitHub Container Registry (ghcr.io)
+
+This project uses **GitHub Actions** to automatically build and push Docker images to GitHub Container Registry on every push to `master`.
+
+### View your image
+- Package registry: https://github.com/Ayibongwe02/Stokvel-Streamlit-Dashboard/pkgs/container/stokvel-streamlit-dashboard
+- Image URL: `ghcr.io/ayibongwe02/stokvel-dashboard:latest`
+
+### Automatic builds
+Every push to `master` triggers `.github/workflows/docker-build-push.yml` which:
+1. Builds the Docker image
+2. Tags it with `latest`, git SHA, and branch name
+3. Pushes to ghcr.io automatically using GitHub's built-in `GITHUB_TOKEN`
+
+### Pull from ghcr.io
+```bash
+docker pull ghcr.io/ayibongwe02/stokvel-dashboard:latest
+docker run -d -p 8080:80 ghcr.io/ayibongwe02/stokvel-dashboard:latest
+```
+
+### Deploy to production
+You can now deploy to any cloud provider that supports container images:
+- **AWS ECS/ECR** — reference `ghcr.io/ayibongwe02/stokvel-dashboard:latest`
+- **Google Cloud Run** — same image reference
+- **Azure Container Instances** — same image reference
+- **Kubernetes** — use the image in your Deployment manifest
+- **Railway, Render, Fly.io** — paste the image URL into the deploy UI
+
 ## GitHub Pages
 
 1. Push the repo
