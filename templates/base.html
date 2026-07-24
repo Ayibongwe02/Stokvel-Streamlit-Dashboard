@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}Stokvel Forecasting{% endblock %} · Ledger</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+  <script src="https://cdn.jsdelivr.net/npm/plotly.js-dist-min@2.29.1/plotly.min.js"></script>
+</head>
+<body>
+  <div class="layout">
+    <aside class="sidebar">
+      <div class="brand">
+        <span class="brand-mark">Ledger</span>
+      </div>
+      <p class="brand-sub">Live statistical forecasting for savings-group balances — Holt-Winters exponential smoothing &amp; auto-tuned ARIMA, fit on the fly.</p>
+
+      {% if current_user.is_authenticated %}
+      <div class="sidebar-user">
+        <div class="who">{{ current_user.name }}</div>
+        {% if active_group %}<div class="group-name">{{ active_group.name }}</div>{% endif %}
+        {% if user_groups|length > 1 %}
+          <ul class="group-switch-list">
+            {% for grp in user_groups %}
+              <li>
+                <form method="post" action="{{ url_for('groups.switch', group_id=grp.id) }}">
+                  <button type="submit" class="{{ 'active' if active_group and grp.id == active_group.id }}">{{ grp.name }}</button>
+                </form>
+              </li>
+            {% endfor %}
+          </ul>
+        {% endif %}
+        <div style="margin-top: 10px; display: flex; gap: 12px;">
+          <a href="{{ url_for('groups.index') }}" class="link-btn">groups</a>
+          <a href="{{ url_for('settings.index') }}" class="link-btn">settings</a>
+          <form method="post" action="{{ url_for('auth.logout') }}">
+            <button type="submit" class="link-btn">log out</button>
+          </form>
+        </div>
+      </div>
+      {% endif %}
+
+      <ul class="nav-tabs">
+        <li><a href="{{ url_for('overview') }}" class="{{ 'active' if active_endpoint == 'overview' }}"><span class="nav-index">01</span> Overview</a></li>
+        <li><a href="{{ url_for('forecast') }}" class="{{ 'active' if active_endpoint == 'forecast' }}"><span class="nav-index">02</span> Member Forecast</a></li>
+        <li><a href="{{ url_for('accuracy') }}" class="{{ 'active' if active_endpoint == 'accuracy' }}"><span class="nav-index">03</span> Model Accuracy</a></li>
+        <li><a href="{{ url_for('regional') }}" class="{{ 'active' if active_endpoint == 'regional' }}"><span class="nav-index">04</span> Regional View</a></li>
+        <li><a href="{{ url_for('data_source') }}" class="{{ 'active' if active_endpoint == 'data_source' }}"><span class="nav-index">05</span> Data Source</a></li>
+      </ul>
+
+      <div class="sidebar-foot">
+        Forecast engine: statsmodels — Holt-Winters (ETS) &amp; auto-tuned ARIMA.<br>
+        Built with Flask · Plotly.
+      </div>
+    </aside>
+
+    <main class="main">
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+          {% for category, message in messages %}
+            <div class="callout {{ 'error' if category == 'error' else 'success' }}">{{ message }}</div>
+          {% endfor %}
+        {% endif %}
+      {% endwith %}
+      {% block content %}{% endblock %}
+    </main>
+  </div>
+
+  {% block scripts %}{% endblock %}
+</body>
+</html>

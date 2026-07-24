@@ -1,0 +1,78 @@
+{% extends "base.html" %}
+{% block title %}Model Accuracy{% endblock %}
+{% block content %}
+  <div class="page-head">
+    <span class="eyebrow">Backtest</span>
+    <h1>Forecast Model Accuracy</h1>
+    <p>Holt-Winters vs. ARIMA, evaluated live via a train/holdout backtest on each member's series.</p>
+  </div>
+
+  {% if not best_model %}
+    <div class="callout error">Not enough data to backtest yet.</div>
+  {% else %}
+    <div class="callout success"><strong>{{ best_model }}</strong> currently has the lowest average RMSE across all members.</div>
+
+    <div class="grid-2" style="grid-template-columns: repeat(3, 1fr);">
+      <div class="panel"><div id="chart-rmse" class="chart"></div></div>
+      <div class="panel"><div id="chart-mae" class="chart"></div></div>
+      <div class="panel"><div id="chart-mape" class="chart"></div></div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-title">Per-Member Accuracy</div>
+      <table class="ledger">
+        <thead>
+          <tr>
+            <th rowspan="2">Member</th>
+            <th colspan="2">RMSE</th><th colspan="2">MAE</th><th colspan="2">MAPE</th>
+          </tr>
+          <tr>
+            <th>Holt-Winters</th><th>ARIMA</th>
+            <th>Holt-Winters</th><th>ARIMA</th>
+            <th>Holt-Winters</th><th>ARIMA</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for r in pivot_rows %}
+          <tr>
+            <td>{{ r.member }}</td>
+            <td>{{ r["Holt-Winters_RMSE"] }}</td><td>{{ r["ARIMA_RMSE"] }}</td>
+            <td>{{ r["Holt-Winters_MAE"] }}</td><td>{{ r["ARIMA_MAE"] }}</td>
+            <td>{{ r["Holt-Winters_MAPE"] }}</td><td>{{ r["ARIMA_MAPE"] }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    {% if hist_available and hist_comparison %}
+    <div class="panel">
+      <div class="panel-title">Historical Model Comparison</div>
+      <p class="panel-caption">Average RMSE per period, from the stored 2024–2025 forecasting dataset.</p>
+      <table class="ledger">
+        <thead><tr><th>Member</th><th>Holt-Winters RMSE</th><th>ARIMA RMSE</th></tr></thead>
+        <tbody>
+          {% for r in hist_comparison %}
+          <tr><td>{{ r.member }}</td><td>{{ r.hw }}</td><td>{{ r.arima }}</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+      <p class="panel-caption">No historical forecast CSV loaded — showing live backtest results only.</p>
+    {% endif %}
+  {% endif %}
+{% endblock %}
+
+{% block scripts %}
+{% if bar_charts %}
+<script>
+  const figRmse = {{ bar_charts.RMSE | safe }};
+  const figMae = {{ bar_charts.MAE | safe }};
+  const figMape = {{ bar_charts.MAPE | safe }};
+  Plotly.newPlot('chart-rmse', figRmse.data, figRmse.layout, {responsive: true, displaylogo: false});
+  Plotly.newPlot('chart-mae', figMae.data, figMae.layout, {responsive: true, displaylogo: false});
+  Plotly.newPlot('chart-mape', figMape.data, figMape.layout, {responsive: true, displaylogo: false});
+</script>
+{% endif %}
+{% endblock %}
